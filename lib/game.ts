@@ -4,7 +4,7 @@ export const TOTAL_ROUNDS = 6;
 export const OUTPUT_MIN = 1;
 export const OUTPUT_MAX = 30;
 
-export type RoomPhase = "submitting" | "results" | "finished";
+export type RoomPhase = "waiting" | "submitting" | "results" | "finished";
 export type RoomRole = "host" | "team";
 
 export type Team = {
@@ -12,6 +12,7 @@ export type Team = {
   name: string;
   craft: string;
   accent: string;
+  playerName?: string;
 };
 
 export type RoundScenario = {

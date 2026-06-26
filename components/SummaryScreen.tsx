@@ -45,7 +45,13 @@ export function SummaryScreen({ roomCode }: SummaryScreenProps) {
     demand: round.demand,
     supply: round.totalSupply
   }));
-  const rankings = getCumulativeScores(room.history);
+  const rankings = getCumulativeScores(room.history).map((row) => {
+    const roomTeam = room.teams.find((t) => t.id === row.id);
+    return {
+      ...row,
+      name: roomTeam?.playerName ? `${row.name} (${roomTeam.playerName})` : row.name
+    };
+  });
 
   return (
     <main className="page-shell">

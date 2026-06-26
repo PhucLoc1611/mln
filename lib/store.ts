@@ -85,9 +85,9 @@ export async function createRoom(): Promise<RoomState> {
   const room: RoomState = {
     code,
     createdAt: now,
-    teams: TEAMS,
+    teams: TEAMS.map((t) => ({ ...t })), // clone TEAMS to prevent mutating shared constant
     currentRound: 1,
-    phase: "submitting",
+    phase: "waiting", // Starts in waiting lobby phase
     durationSeconds: ROUND_DURATION_SECONDS,
     roundStartedAt: now,
     roundEndsAt: now + ROUND_DURATION_SECONDS * 1000,
@@ -233,12 +233,43 @@ export async function resetRoom(code: string): Promise<RoomState> {
   const room = await getRequiredRoom(code);
   const now = Date.now();
   room.currentRound = 1;
-  room.phase = "submitting";
+  room.phase = "waiting"; // Reset to waiting lobby
   room.roundStartedAt = now;
   room.roundEndsAt = now + room.durationSeconds * 1000;
   room.demandByRound = makeDemandByRound();
   room.submissions = [];
   room.history = [];
+  // Reset player names
+  room.teams = room.teams.map((t) => ({ ...t, playerName: undefined }));
+  await saveRoomToStore(room);
+  return room;
+}
+
+export async function joinTeam(code: string, teamId: number, playerName: string): Promise<RoomState> {
+  const room = await getRequiredRoom(code);
+  const team = room.teams.find((t) => t.id === teamId);
+  if (!team) {
+    throw new StoreError("Xưởng không tồn tại.", 400);
+  }
+  // Check if player name is already set by someone else or empty
+  const name = playerName.trim();
+  if (!name) {
+    throw new StoreError("Tên người chơi không được để trống.", 400);
+  }
+  team.playerName = name;
+  await saveRoomToStore(room);
+  return room;
+}
+
+export async function startGame(code: string): Promise<RoomState> {
+  const room = await getRequiredRoom(code);
+  if (room.phase !== "waiting") {
+    throw new StoreError("Trò chơi đã bắt đầu rồi.", 409);
+  }
+  const now = Date.now();
+  room.phase = "submitting";
+  room.roundStartedAt = now;
+  room.roundEndsAt = now + room.durationSeconds * 1000;
   await saveRoomToStore(room);
   return room;
 }

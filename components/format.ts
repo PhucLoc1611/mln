@@ -1,6 +1,13 @@
 import { RoundResult, TEAMS, TeamRoundResult, formatGold, formatMeters, getCumulativeScores } from "@/lib/game";
 
-export function getTeam(teamId: number) {
+export function getTeam(teamId: number, teams?: any[]) {
+  const dynamicTeam = teams?.find((t) => t.id === teamId);
+  if (dynamicTeam) {
+    return {
+      ...dynamicTeam,
+      name: dynamicTeam.playerName ? `${dynamicTeam.name} (${dynamicTeam.playerName})` : dynamicTeam.name
+    };
+  }
   return TEAMS.find((team) => team.id === teamId) ?? TEAMS[0];
 }
 
@@ -19,11 +26,15 @@ export function sortRoundResults(results: TeamRoundResult[]) {
   return [...results].sort((a, b) => b.profit - a.profit);
 }
 
-export function cumulativeRows(history: RoundResult[]) {
-  return getCumulativeScores(history).map((row, index) => ({
-    rank: index + 1,
-    ...row
-  }));
+export function cumulativeRows(history: RoundResult[], teams?: any[]) {
+  return getCumulativeScores(history).map((row, index) => {
+    const dynamicTeam = teams?.find((t) => t.id === row.id);
+    return {
+      rank: index + 1,
+      ...row,
+      name: dynamicTeam?.playerName ? `${row.name} (${dynamicTeam.playerName})` : row.name
+    };
+  });
 }
 
 export function describeResult(profit: number) {

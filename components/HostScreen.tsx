@@ -136,6 +136,107 @@ export function HostScreen({ roomCode }: HostScreenProps) {
   const rankings = getCumulativeScores(room.history);
   const roundResults = latestRound ? sortRoundResults(latestRound.teamResults) : [];
 
+  if (room.phase === "waiting") {
+    const joinedTeams = room.teams.filter((t) => t.playerName);
+    const joinedCount = joinedTeams.length;
+
+    return (
+      <HostFrame>
+        <div className="host-layout" style={{ maxWidth: 1000, margin: "0 auto", padding: 20 }}>
+          <div className="host-main" style={{ display: "grid", gap: 20 }}>
+            <section className="panel host-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div className="badge hot">
+                  <Factory size={15} />
+                  Mã phòng <span className="data">{room.code}</span>
+                </div>
+                <h1 className="section-title" style={{ marginTop: 12, fontSize: "2.35rem" }}>
+                  Phòng chờ trò chơi
+                </h1>
+                <p className="muted" style={{ margin: 0 }}>
+                  Người chơi quét mã QR hoặc truy cập đường link để đặt tên và tham gia xưởng.
+                </p>
+              </div>
+              <div className="stat" style={{ minWidth: 200, textAlign: "right" }}>
+                <div className="label">Đại diện đã tham gia</div>
+                <div className="value" style={{ color: "var(--teal)" }}>{joinedCount} / 7</div>
+                <div className="muted">Cần tối thiểu 1 nhóm</div>
+              </div>
+            </section>
+
+            <section className="panel" style={{ padding: 20 }}>
+              <h2 className="section-title" style={{ marginBottom: 16 }}>Danh sách 7 xưởng làng nghề</h2>
+              <div className="team-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                {room.teams.map((team) => {
+                  const isJoined = Boolean(team.playerName);
+                  return (
+                    <article className={`team-card ${isJoined ? "submitted" : ""}`} key={team.id} style={{ border: isJoined ? "1px solid var(--teal)" : "1px solid rgba(255,255,255,0.08)", padding: 16 }}>
+                      <div className="team-head">
+                        <div>
+                          <p className="team-name" style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{team.name}</p>
+                          <span className="muted" style={{ fontSize: ".82rem" }}>{team.craft}</span>
+                        </div>
+                        <span className="team-icon" style={{ background: team.accent, width: 36, height: 36 }}>
+                          <Factory size={18} />
+                        </span>
+                      </div>
+                      <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                        <span className="pulse-indicator" style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: isJoined ? "var(--teal)" : "rgba(255,255,255,0.25)"
+                        }} />
+                        <span className="data" style={{ fontSize: ".95rem", color: isJoined ? "#fff" : "rgba(255,255,255,0.4)" }}>
+                          {isJoined ? team.playerName : "Đang chờ..."}
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="panel" style={{ padding: 20, display: "flex", justifyContent: "space-between", gap: 20, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+                <button
+                  className="button primary large"
+                  disabled={joinedCount === 0}
+                  onClick={async () => {
+                    await runHostAction(() => postRoomAction(`/api/room/${roomCode}/start`));
+                  }}
+                  style={{ fontSize: "1.2rem", padding: "12px 30px", display: "flex", alignItems: "center", cursor: joinedCount === 0 ? "not-allowed" : "pointer" }}
+                >
+                  <Play size={20} style={{ marginRight: 8 }} />
+                  BẮT ĐẦU GAME
+                </button>
+                {joinedCount === 0 && (
+                  <span className="muted" style={{ fontSize: ".9rem" }}>Vui lòng chờ ít nhất một người chơi tham gia.</span>
+                )}
+              </div>
+              <button className="button danger" onClick={resetRoom}>
+                <RotateCcw size={17} style={{ marginRight: 6 }} />
+                Chơi lại
+              </button>
+            </section>
+          </div>
+
+          <aside className="host-side" style={{ display: "grid", gap: 20 }}>
+            <section className="panel" style={{ padding: 20, textAlign: "center" }}>
+              <h2 className="section-title" style={{ marginBottom: 12 }}>QR Code tham gia</h2>
+              <div className="qr-box" style={{ padding: 10, background: "#fff", borderRadius: 8, display: "inline-block", margin: "10px 0" }}>
+                {joinUrl ? <QRCodeSVG value={joinUrl} size={220} level="M" /> : null}
+              </div>
+              <p className="data" style={{ marginTop: 10, wordBreak: "break-all", color: "var(--gold)", fontSize: ".9rem" }}>
+                {joinUrl}
+              </p>
+            </section>
+          </aside>
+        </div>
+      </HostFrame>
+    );
+  }
+
   return (
     <HostFrame>
       <div className="host-layout">
@@ -257,7 +358,10 @@ export function HostScreen({ roomCode }: HostScreenProps) {
                   <article className={`team-card ${submitted ? "submitted" : ""}`} key={team.id}>
                     <div className="team-head">
                       <div>
-                        <p className="team-name">{team.name}</p>
+                        <p className="team-name">
+                          {team.name}
+                          {team.playerName ? ` (${team.playerName})` : ""}
+                        </p>
                         <span className="muted" style={{ fontSize: ".8rem" }}>{team.craft}</span>
                       </div>
                       <span className="team-icon" style={{ background: team.accent }}>
@@ -340,7 +444,7 @@ export function HostScreen({ roomCode }: HostScreenProps) {
           <section className="panel" style={{ padding: 14 }}>
             <h2 className="section-title">Bảng xếp hạng</h2>
             <div style={{ marginTop: 8 }}>
-              {cumulativeRows(room.history).map((row) => (
+              {cumulativeRows(room.history, room.teams).map((row) => (
                 <div className="rank-row" key={row.id}>
                   <span className="rank-num">{row.rank}</span>
                   <div>
@@ -358,7 +462,7 @@ export function HostScreen({ roomCode }: HostScreenProps) {
             {latestRound ? (
               <div style={{ marginTop: 8 }}>
                 {roundResults.map((result, index) => {
-                  const team = getTeam(result.teamId);
+                  const team = getTeam(result.teamId, room.teams);
                   return (
                     <div className="rank-row" key={result.teamId}>
                       <span className="rank-num">{index + 1}</span>
