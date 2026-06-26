@@ -11,7 +11,7 @@ export async function POST(
   const body = (await request.json()) as { demand?: number };
 
   try {
-    const room = updateDemand(code, Number(body.demand));
+    const room = await updateDemand(code, Number(body.demand));
     return NextResponse.json({ room: serializeRoom(room, "host") });
   } catch (error) {
     if (error instanceof StoreError) {

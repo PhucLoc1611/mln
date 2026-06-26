@@ -10,7 +10,7 @@ export async function POST(
   const { code } = await context.params;
 
   try {
-    const room = resetRoom(code);
+    const room = await resetRoom(code);
     return NextResponse.json({ room: serializeRoom(room, "host") });
   } catch (error) {
     if (error instanceof StoreError) {

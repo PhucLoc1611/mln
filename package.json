@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.0",
     "clsx": "latest",
     "lucide-react": "latest",
     "next": "latest",

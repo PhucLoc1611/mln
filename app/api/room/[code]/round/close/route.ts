@@ -11,7 +11,7 @@ export async function POST(
   const body = (await request.json().catch(() => ({}))) as { demand?: number };
 
   try {
-    const room = closeRound(code, typeof body.demand === "number" ? Number(body.demand) : undefined);
+    const room = await closeRound(code, typeof body.demand === "number" ? Number(body.demand) : undefined);
     return NextResponse.json({ room: serializeRoom(room, "host") });
   } catch (error) {
     if (error instanceof StoreError) {

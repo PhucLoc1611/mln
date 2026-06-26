@@ -9,7 +9,7 @@ export async function GET(
   context: { params: Promise<{ code: string }> }
 ) {
   const { code } = await context.params;
-  const room = getRoom(code);
+  const room = await getRoom(code);
 
   if (!room) {
     return NextResponse.json({ error: "Không tìm thấy phòng chơi." }, { status: 404 });
