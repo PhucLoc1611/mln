@@ -13,6 +13,7 @@ export type Team = {
   craft: string;
   accent: string;
   playerName?: string;
+  playerToken?: string;
 };
 
 export type RoundScenario = {

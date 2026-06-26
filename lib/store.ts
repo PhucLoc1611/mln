@@ -110,7 +110,7 @@ export function serializeRoom(room: RoomState, role: RoomRole): RoomView {
   const view: RoomView = {
     code: room.code,
     createdAt: room.createdAt,
-    teams: room.teams,
+    teams: room.teams.map(({ playerToken, ...t }) => t),
     currentRound: room.currentRound,
     phase: room.phase,
     durationSeconds: room.durationSeconds,
@@ -245,7 +245,12 @@ export async function resetRoom(code: string): Promise<RoomState> {
   return room;
 }
 
-export async function joinTeam(code: string, teamId: number, playerName: string): Promise<RoomState> {
+export async function joinTeam(
+  code: string,
+  teamId: number,
+  playerName: string,
+  clientToken?: string
+): Promise<{ room: RoomState; playerToken: string }> {
   const room = await getRequiredRoom(code);
   const team = room.teams.find((t) => t.id === teamId);
   if (!team) {
@@ -256,9 +261,19 @@ export async function joinTeam(code: string, teamId: number, playerName: string)
   if (!name) {
     throw new StoreError("Tên người chơi không được để trống.", 400);
   }
+
+  // Prevent double claiming of workshops
+  if (team.playerName) {
+    if (!team.playerToken || team.playerToken !== clientToken) {
+      throw new StoreError("Xưởng này đã được chọn bởi người chơi khác.", 409);
+    }
+  }
+
+  const token = team.playerToken || Math.random().toString(36).substring(2, 15);
   team.playerName = name;
+  team.playerToken = token;
   await saveRoomToStore(room);
-  return room;
+  return { room, playerToken: token };
 }
 
 export async function startGame(code: string): Promise<RoomState> {

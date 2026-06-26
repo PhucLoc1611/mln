@@ -8,11 +8,11 @@ export async function POST(
   context: { params: Promise<{ code: string }> }
 ) {
   const { code } = await context.params;
-  const body = (await request.json()) as { teamId?: number; playerName?: string };
+  const body = (await request.json()) as { teamId?: number; playerName?: string; clientToken?: string };
 
   try {
-    const room = await joinTeam(code, Number(body.teamId), String(body.playerName));
-    return NextResponse.json({ room: serializeRoom(room, "team") });
+    const { room, playerToken } = await joinTeam(code, Number(body.teamId), String(body.playerName), body.clientToken);
+    return NextResponse.json({ room: serializeRoom(room, "team"), playerToken });
   } catch (error) {
     if (error instanceof StoreError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

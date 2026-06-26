@@ -72,12 +72,19 @@ export function TeamScreen({ roomCode }: TeamScreenProps) {
     setJoining(true);
     setSubmitError(null);
     try {
-      const payload = await postRoomAction<{ room: typeof room }>(`/api/room/${roomCode}/join`, {
+      const tokenKey = `priceRound_room_${roomCode}_team_${teamId}_token`;
+      const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) || "" : "";
+
+      const payload = await postRoomAction<{ room: typeof room; playerToken?: string }>(`/api/room/${roomCode}/join`, {
         teamId,
-        playerName: playerNameInput.trim()
+        playerName: playerNameInput.trim(),
+        clientToken: token
       });
       if (payload.room) {
         setRoom(payload.room);
+      }
+      if (payload.playerToken && typeof window !== "undefined") {
+        localStorage.setItem(tokenKey, payload.playerToken);
       }
       setEditingName(false);
       await refresh();
